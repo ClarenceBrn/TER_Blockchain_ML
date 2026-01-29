@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.metrics import accuracy_score, matthews_corrcoef, make_scorer
+from sklearn.metrics import accuracy_score, matthews_corrcoef, make_scorer, classification_report
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.model_selection import StratifiedKFold, cross_validate, cross_val_predict
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
 
-def evaluate_classifier(clf, X, y, n_splits=5, random_state=42):
+def evaluate_classifier(clf, X, y, n_splits=5, return_detailed_report=False, random_state=42):
     """
     Évalue un classifieur (metrics = accuracy && MCC) via une Validation Croisée Stratifiée (Stratified K-Fold).
     
@@ -14,11 +14,12 @@ def evaluate_classifier(clf, X, y, n_splits=5, random_state=42):
         clf: Le classifieur scikit-learn à évaluer.
         X: Les features (pd.DataFrame).
         y: Les labels (pd.Series).
-        n_splits (int): Nombre de plis pour la validation croisée (défaut=5).
+        n_splits (int): Nombre de plis pour la validation croisée.
+        return_detailed_report (bool): Si True, calcule aussi le rapport complet par classe (plus lent).
         random_state (int): Graine aléatoire pour la reproductibilité.
         
     Returns:
-        (dict): Dictionnaire avec les moyennes et std pour Accuracy et MCC.
+        (dict): Dictionnaire avec les moyennes et std pour Accuracy et MCC (+ rapport complet optionnel).
     """
     # Configuration de la validation croisée
     cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state) 
@@ -39,11 +40,19 @@ def evaluate_classifier(clf, X, y, n_splits=5, random_state=42):
     mcc_std = scores['test_mcc'].std()
 
     print(f"Accuracy moyenne : {acc_mean:.2f} (+/- {acc_std * 2:.2f})")
-    print(f"MCC moyenne : {acc_mean:.2f} (+/- {acc_std * 2:.2f})")
-    return {
+    print(f"MCC moyenne : {mcc_mean:.2f} (+/- {mcc_std * 2:.2f})")
+    results = {
         'acc_mean': acc_mean, 'acc_std': acc_std,
         'mcc_mean': mcc_mean, 'mcc_std': mcc_std
     }
+
+    # Attention : Double le temps de calcul car ré-entraîne les modèles
+    if return_detailed_report:
+        y_pred = cross_val_predict(clf, X, y, cv=cv)
+        report = classification_report(y, y_pred, output_dict=True)
+        results['detailed_report'] = report
+    
+    return results
 
 def prepare_and_init_model(df, ignore_cols, model_type='GradientBoosting', target_col='label', return_features=False, random_state=42):
     """

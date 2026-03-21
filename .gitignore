@@ -1,9 +1,9 @@
-# .gitignore
 .venv/
 env/
 __pycache__/
-*.csv
 .ipynb_checkpoints/
 *.DS_Store
 data_raw/
 data_processed/
+*.csv
+!data_sample/*.csv

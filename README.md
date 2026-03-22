@@ -42,3 +42,11 @@ cd TER_Blockchain_ML
 python -m venv .venv
 
 source .venv/bin/activate
+```
+
+
+## Contributors
+
+
+- Clarence Bernabé
+- Moé Chassagne-Arikawa
